@@ -9,6 +9,7 @@ class PushNotification extends DataObject {
 		'Content'          => 'Text',
 		'ProviderClass'    => 'Varchar(50)',
 		'ProviderSettings' => 'Text',
+		'ScheduledAt'      => 'SS_Datetime',
 		'Sent'             => 'Boolean',
 		'SentAt'           => 'SS_Datetime'
 	);
@@ -40,12 +41,18 @@ class PushNotification extends DataObject {
 		$fields->removeByName('SentAt');
 		$fields->removeByName('RecipientMembers');
 		$fields->removeByName('RecipientGroups');
+		$fields->removeByName('SendJobID');
 
 		if($this->Sent) {
 			$sentAt = _t('Push.SENTAT', 'This notification was sent at %s.');
 			$sentAt = sprintf($sentAt, $this->obj('SentAt')->Nice());
-
 			$fields->insertAfter(new LiteralField('SentAtMessage', "<p>$sentAt</p>"), 'Content');
+		}
+
+		if($this->Sent || !interface_exists('QueuedJob')) {
+			$fields->removeByName('ScheduledAt');
+		} else {
+			$fields->dataFieldByName('ScheduledAt')->getDateField()->setConfig('showcalendar', true);
 		}
 
 		$fields->addFieldsToTab('Root.Main', array(
@@ -68,6 +75,44 @@ class PushNotification extends DataObject {
 
 	public function getValidator() {
 		return new RequiredFields('Title');
+	}
+
+	protected function validate() {
+		$result = parent::validate();
+
+		if(!$this->Sent && $this->ScheduledAt) {
+			if(strtotime($this->ScheduledAt) < time()) {
+				$result->error(_t(
+					'Push.CANTSCHEDULEINPAST',
+					'You cannot schedule notifications in the past'
+				));
+			}
+
+			if(!$this->getProvider()) {
+				$result->error(_t(
+					'Push.CANTSCHEDULEWOPROVIDER',
+					'You cannot schedule a notification without a valid provider configured'
+				));
+			}
+		}
+
+		return $result;
+	}
+
+	protected function onBeforeWrite() {
+		if($this->ScheduledAt && interface_exists('QueuedJob')) {
+			if($this->SendJobID) {
+				$job = $this->SendJob();
+				$job->StartAfter = $this->ScheduledAt;
+				$job->write();
+			} else {
+				$this->SendJobID = singleton('QueuedJobService')->queueJob(
+					new SendPushNotificationsJob($this), $this->ScheduledAt
+				);
+			}
+		}
+
+		parent::onBeforeWrite();
 	}
 
 	public function canEdit($member = null) {
