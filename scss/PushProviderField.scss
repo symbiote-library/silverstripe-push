@@ -1,0 +1,19 @@
+.push-provider {
+	.message.validation {
+		background: #FED0D0;
+		color: #000;
+		border: 2px solid #FF7373;
+		font-size: 12px;
+		font-weight: normal;
+		padding: 3px 5px;
+		width: auto;
+	}
+
+	.provider-fields {
+		&.loading {
+			background: url(../../cms/images/network-save.gif) no-repeat 5px center;
+			height: 16px;
+			margin-top: 6px;
+		}
+	}
+}
