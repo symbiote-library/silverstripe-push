@@ -21,7 +21,7 @@ class PushNotification extends DataObject {
 
 	public static $summary_fields = array(
 		'Title',
-		'Sent'
+		'SentAt'
 	);
 
 	public static $searchable_fields = array(
@@ -54,15 +54,22 @@ class PushNotification extends DataObject {
 		} else {
 			$fields->dataFieldByName('ScheduledAt')->getDateField()->setConfig('showcalendar', true);
 		}
+		
+		$fields->dataFieldByName('Content')->setTitle('Content - used as the main body of the notification');
 
+		$members = array();
+		$allMembers = DataObject::get('Member');
+		if ($allMembers && $allMembers->count()) {
+			$members = $allMembers->map();
+		}
 		$fields->addFieldsToTab('Root.Main', array(
-			new TreeMultiselectField(
+			new CheckboxSetField(
 				'RecipientMembers',
-				_t('Push.RECIPIENTMEMBERS', 'Recipient Members'),
-				'Member'),
+				_t('Push.RECIPIENTMEMBERS', 'Recipient Members (note: some push providers may not use these members)'),
+				$members),
 			new TreeMultiselectField(
 				'RecipientGroups',
-				_t('Push.RECIPIENTGROUPS', 'Recipient Groups'),
+				_t('Push.RECIPIENTGROUPS', 'Recipient Groups (note: some push providers may not use these members)'),
 				'Group'),
 			new PushProviderField(
 				'Provider',

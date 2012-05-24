@@ -17,6 +17,7 @@ class PushNotificationsAdmin extends ModelAdmin {
 
 	public function init() {
 		parent::init();
+		Requirements::javascript(THIRDPARTY_DIR . '/jquery-livequery/jquery.livequery.js');
 		Requirements::javascript('push/javascript/PushNotificationsAdmin.js');
 	}
 

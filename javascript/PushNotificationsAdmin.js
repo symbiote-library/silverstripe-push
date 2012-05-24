@@ -1,4 +1,12 @@
 (function($) {
+	$('#Provider-Settings-Subject').livequery(function () {
+		var cur = $(this).val();
+		if (!cur) {
+			cur = $('#right input[name=Title]').val();
+			$(this).val(cur);
+		}
+	});
+	
 	$("#right input[name=action_doSend]").live("click", function() {
 		var form    = $("#right form");
 		var action  = form.attr("action") + "?" + $(this).fieldSerialize();
