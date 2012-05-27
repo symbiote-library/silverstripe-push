@@ -109,7 +109,13 @@ class PushNotification extends DataObject {
 	}
 
 	protected function onBeforeWrite() {
-		if($this->ScheduledAt && interface_exists('QueuedJob')) {
+		parent::onBeforeWrite();
+
+		if(!interface_exists('QueuedJob')) {
+			return;
+		}
+
+		if($this->ScheduledAt) {
 			if($this->SendJobID) {
 				$job = $this->SendJob();
 				$job->StartAfter = $this->ScheduledAt;
@@ -119,9 +125,9 @@ class PushNotification extends DataObject {
 					new SendPushNotificationsJob($this), $this->ScheduledAt
 				);
 			}
+		} else {
+			if($this->SendJobID) $this->SendJob()->delete();
 		}
-
-		parent::onBeforeWrite();
 	}
 
 	public function canEdit($member = null) {
