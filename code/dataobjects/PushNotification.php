@@ -54,8 +54,10 @@ class PushNotification extends DataObject {
 		} else {
 			$fields->dataFieldByName('ScheduledAt')->getDateField()->setConfig('showcalendar', true);
 		}
-		
-		$fields->dataFieldByName('Content')->setTitle('Content - used as the main body of the notification');
+
+		$fields->dataFieldByName('Content')->setRightTitle(_t(
+			'Push.USEDMAINBODY', '(Used as the main body of the notification)'
+		));
 
 		$members = array();
 		$allMembers = DataObject::get('Member');
@@ -65,11 +67,11 @@ class PushNotification extends DataObject {
 		$fields->addFieldsToTab('Root.Main', array(
 			new CheckboxSetField(
 				'RecipientMembers',
-				_t('Push.RECIPIENTMEMBERS', 'Recipient Members (note: some push providers may not use these members)'),
+				_t('Push.RECIPIENTMEMBERS', 'Recipient Members'),
 				$members),
 			new TreeMultiselectField(
 				'RecipientGroups',
-				_t('Push.RECIPIENTGROUPS', 'Recipient Groups (note: some push providers may not use these members)'),
+				_t('Push.RECIPIENTGROUPS', 'Recipient Groups'),
 				'Group'),
 			new PushProviderField(
 				'Provider',
