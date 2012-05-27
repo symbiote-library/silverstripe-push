@@ -53,7 +53,7 @@ abstract class PushNotificationProvider {
 	 * @param  PushProvidersField $field
 	 * @return FieldSet
 	 */
-	public function getSettingsFields(PushProvidersField $field) {
+	public function getSettingsFields() {
 		return new FieldSet();
 	}
 
