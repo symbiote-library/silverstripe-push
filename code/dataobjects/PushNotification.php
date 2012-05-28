@@ -29,6 +29,8 @@ class PushNotification extends DataObject {
 		'Content',
 		'Sent'
 	);
+	
+	public static $default_sort = 'Created DESC';
 
 	protected $providerInst;
 
