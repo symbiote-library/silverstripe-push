@@ -6,7 +6,7 @@
  */
 class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 
-	const BROADCAST_URL = 'https://go.urbanairship.com/api/push/broadcast';
+	const BROADCAST_URL = 'https://go.urbanairship.com/api/push/broadcast/';
 
 	public static $api_key;
 	public static $api_secret;
