@@ -7,27 +7,44 @@
 class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 
 	const BROADCAST_URL = 'https://go.urbanairship.com/api/push/broadcast/';
+	
+	public static $applications = array();
 
-	public static $api_key;
-	public static $api_secret;
-
+	public static function add_application($title, $key, $secret) {
+		self::$applications[$title] = array(
+			'key'		=> $key,
+			'secret'	=> $secret,
+		);
+	}
+	
 	public function getTitle() {
 		return _t('Push.URBANAIRSHIPBROADCAST', 'Urban Airship Broadcast');
 	}
 	
 	public function sendPushNotification(PushNotification $notification) {
+		$title = $this->getSetting('App');
+		if (!$title) {
+			throw new PushException("No application selected. Please add configuration for a new application");
+		}
+
+		$settings = isset(self::$applications[$title]) ? self::$applications[$title] : null;
 		
-		$client = $this->getClient(self::BROADCAST_URL, self::$api_key, self::$api_secret);
-		
+		if (!$settings) {
+			throw new PushException("No settings provided for application " . Convert::raw2xml($title));
+		}
+
+		$client = $this->getClient(self::BROADCAST_URL, $settings['key'], $settings['secret']);
+
 		$client->setMethod('POST');
 		$client->setHeaders('Content-Type: application/json');
-		
+
 		$data = array(
 			'aps'	=> array(
-				'badge'		=> 'auto',
-				'alert'		=> $notification->Content
+				'badge'		=> $this->getSetting('Badge') == 'inc' ? '+1' : $this->getSetting('Badge'), 
+				'alert'		=> $notification->Content,
+				'sound'		=> $this->getSetting('Sound'), 
 			),
-			
+
 // TODO: When android is needed...
 //			'android'	=> array(
 //				'alert'		=> $message
@@ -75,9 +92,29 @@ class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 
 		return $this->httpClient;
 	}
+	
+	public function setSettings(array $data) {
+		parent::setSettings($data);
+
+		$this->setSetting('Sound', isset($data['Sound']) ? (string) $data['Sound'] : null);
+		$this->setSetting('Badge', isset($data['Badge']) ? (string) $data['Badge'] : null);
+		$this->setSetting('App', isset($data['App']) ? (string) $data['App'] : null);
+	}
 
 	public function getSettingsFields() {
+		$badgeValues = array('auto' => 'Auto', 'inc' => 'Increment');
+
+		foreach (range(1, 5) as $val) {
+			$badgeValues[$val] = $val;
+		}
+
+		$applications = array_keys(self::$applications);
+		$applications = array_combine($applications, $applications);
+		
 		return new FieldSet(
+			new DropdownField($this->getSettingFieldName('App'), _t('Push.UA_APP', 'Urban Airship Application'), $applications, $this->getSetting('App')),
+			new DropdownField($this->getSettingFieldName('Sound'), _t('Push.UA_SOUND', 'Trigger sound when alert is received?'), array('No', 'Yes'), $this->getSetting('Sound')),
+			new DropdownField($this->getSettingFieldName('Badge'), _t('Push.UA_BADGE', 'Badge value'), $badgeValues, $this->getSetting('Badge')),
 			new LiteralField('', sprintf('<p>%s</p>', _t(
 				'Push.UARECIPIENTSUPPORT', 'The Urban Airship provider does ' .
 				'not support selecting recipients - the push notification ' .
@@ -85,5 +122,4 @@ class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 			)))
 		);
 	}
-
 }
