@@ -39,7 +39,7 @@ class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 		
 		$response = $client->request();
 		if ($response->isError()) {
-			throw new PushException($resp->getBody(), $resp->getStatusCode());
+			throw new PushException($response->getBody(), $response->getStatus());
 		}
 		return true;
 	}
