@@ -75,4 +75,15 @@ class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 
 		return $this->httpClient;
 	}
+
+	public function getSettingsFields() {
+		return new FieldSet(
+			new LiteralField('', sprintf('<p>%s</p>', _t(
+				'Push.UARECIPIENTSUPPORT', 'The Urban Airship provider does ' .
+				'not support selecting recipients - the push notification ' .
+				'will be sent to all devices using the broadcast API.'
+			)))
+		);
+	}
+
 }
