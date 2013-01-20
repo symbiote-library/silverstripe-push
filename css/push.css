@@ -1,0 +1,9 @@
+.icon-16.icon-pushnotificationsadmin {
+	background-image: url(../images/pushnotificationsadmin-icon.png);
+}
+
+.push-provider .provider-fields.loading {
+	background: url(../../cms/images/network-save.gif) no-repeat 5px center;
+	height: 16px;
+	margin-top: 6px;
+}

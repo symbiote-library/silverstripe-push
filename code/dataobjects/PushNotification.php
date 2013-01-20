@@ -46,9 +46,14 @@ class PushNotification extends DataObject {
 		$fields->removeByName('SendJobID');
 
 		if($this->Sent) {
-			$sentAt = _t('Push.SENTAT', 'This notification was sent at %s.');
-			$sentAt = sprintf($sentAt, $this->obj('SentAt')->Nice());
-			$fields->insertAfter(new LiteralField('SentAtMessage', "<p>$sentAt</p>"), 'Content');
+			$fields->insertBefore(
+				new LiteralField('SentAsMessage', sprintf('<p class="message">%s</p>', _t(
+					'Push.SENTAT',
+					'This notification was sent at {at}',
+					array('at' => $this->obj('SentAt')->Nice())
+				))),
+				'Title'
+			);
 		}
 
 		if($this->Sent || !interface_exists('QueuedJob')) {
@@ -57,20 +62,15 @@ class PushNotification extends DataObject {
 			$fields->dataFieldByName('ScheduledAt')->getDateField()->setConfig('showcalendar', true);
 		}
 
-		$fields->dataFieldByName('Content')->setRightTitle(_t(
+		$fields->dataFieldByName('Content')->setDescription(_t(
 			'Push.USEDMAINBODY', '(Used as the main body of the notification)'
 		));
 
-		$members = array();
-		$allMembers = DataObject::get('Member');
-		if ($allMembers && $allMembers->count()) {
-			$members = $allMembers->map();
-		}
 		$fields->addFieldsToTab('Root.Main', array(
 			new CheckboxSetField(
 				'RecipientMembers',
 				_t('Push.RECIPIENTMEMBERS', 'Recipient Members'),
-				$members),
+				Member::get()->map()),
 			new TreeMultiselectField(
 				'RecipientGroups',
 				_t('Push.RECIPIENTGROUPS', 'Recipient Groups'),
@@ -174,10 +174,10 @@ class PushNotification extends DataObject {
 	/**
 	 * Returns all member recipient objects.
 	 *
-	 * @return DataObjectSet
+	 * @return ArrayList
 	 */
 	public function getRecipients() {
-		$set = new DataObjectSet();
+		$set = new ArrayList();
 		$set->merge($this->RecipientMembers());
 
 		foreach($this->RecipientGroups() as $group) {

@@ -13,10 +13,6 @@ class EmailPushProvider extends PushNotificationProvider {
 	public function sendPushNotification(PushNotification $notification) {
 		$email = new Email();
 		$email->setFrom($this->getSetting('From'));
-		$subject = $this->getSetting('Subject');
-		if (!$subject) {
-			$subject = $notification->Title;
-		}
 		$email->setSubject($this->getSetting('Subject'));
 		$email->setBody($notification->Content);
 
@@ -27,7 +23,7 @@ class EmailPushProvider extends PushNotificationProvider {
 	}
 
 	public function getSettingsFields() {
-		return new FieldSet(array(
+		return new FieldList(array(
 			new TextField(
 				$this->getSettingFieldName('Subject'),
 				_t('Push.EMAILSUBJECT', 'Email Subject'),

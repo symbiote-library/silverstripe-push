@@ -51,10 +51,10 @@ abstract class PushNotificationProvider {
 	 * Returns a list of form fields used for populating the custom settings.
 	 *
 	 * @param  PushProvidersField $field
-	 * @return FieldSet
+	 * @return FieldList
 	 */
 	public function getSettingsFields() {
-		return new FieldSet();
+		return new FieldList();
 	}
 
 	/**
@@ -82,7 +82,7 @@ abstract class PushNotificationProvider {
 	 * @return string
 	 */
 	protected function getSettingFieldName($setting) {
-		return sprintf('%s[Settings][%s]', $this->field->Name(), $setting);
+		return sprintf('%s[Settings][%s]', $this->field->getName(), $setting);
 	}
 
 }

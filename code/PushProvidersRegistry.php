@@ -21,7 +21,7 @@ class PushProvidersRegistry {
 	 * @param string $class
 	 */
 	public function add($class) {
-		if(!ClassInfo::is_subclass_of($class, 'PushNotificationProvider')) {
+		if(!is_subclass_of($class, 'PushNotificationProvider')) {
 			throw new Exception('Provider classes must be subclasses of PushNotificationProvider.');
 		}
 

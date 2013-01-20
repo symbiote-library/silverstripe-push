@@ -12,8 +12,8 @@ class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 
 	public static function add_application($title, $key, $secret) {
 		self::$applications[$title] = array(
-			'key'		=> $key,
-			'secret'	=> $secret,
+			'key'    => $key,
+			'secret' => $secret,
 		);
 	}
 	
@@ -102,19 +102,37 @@ class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 	}
 
 	public function getSettingsFields() {
-		$badgeValues = array('auto' => 'Auto', 'inc' => 'Increment');
+		$badges = array('auto' => 'Auto', 'inc' => 'Increment');
 
-		foreach (range(1, 5) as $val) {
-			$badgeValues[$val] = $val;
+		foreach(range(1, 5) as $val) {
+			$badges[$val] = $val;
 		}
 
 		$applications = array_keys(self::$applications);
-		$applications = array_combine($applications, $applications);
-		
-		return new FieldSet(
-			new DropdownField($this->getSettingFieldName('App'), _t('Push.UA_APP', 'Urban Airship Application'), $applications, $this->getSetting('App')),
-			new DropdownField($this->getSettingFieldName('Sound'), _t('Push.UA_SOUND', 'Trigger sound when alert is received?'), array('No', 'Yes'), $this->getSetting('Sound')),
-			new DropdownField($this->getSettingFieldName('Badge'), _t('Push.UA_BADGE', 'Badge value'), $badgeValues, $this->getSetting('Badge')),
+
+		if($applications) {
+			$applications = ArrayLib::valuekey($applications);
+		}
+
+		return new FieldList(
+			new DropdownField(
+				$this->getSettingFieldName('App'),
+				_t('Push.UA_APP', 'Urban Airship Application'),
+				$applications,
+				$this->getSetting('App')
+			),
+			new DropdownField(
+				$this->getSettingFieldName('Sound'),
+				_t('Push.UA_SOUND', 'Trigger sound when alert is received?'),
+				array('No', 'Yes'),
+				$this->getSetting('Sound')
+			),
+			new DropdownField(
+				$this->getSettingFieldName('Badge'),
+				_t('Push.UA_BADGE', 'Badge value'),
+				$badges,
+				$this->getSetting('Badge')
+			),
 			new LiteralField('', sprintf('<p>%s</p>', _t(
 				'Push.UARECIPIENTSUPPORT', 'The Urban Airship provider does ' .
 				'not support selecting recipients - the push notification ' .

@@ -1,12 +1,10 @@
 (function($) {
-	$('#Provider-Settings-Subject').livequery(function () {
-		var cur = $(this).val();
-		if (!cur) {
-			cur = $('#right input[name=Title]').val();
-			$(this).val(cur);
+	$("#Provider-Settings-Subject").entwine({
+		onadd: function() {
+			if(!this.val()) this.val($("#Form_ItemEditForm_Title").val());
 		}
 	});
-	
+
 	$("#right input[name=action_doSend]").live("click", function() {
 		var form    = $("#right form");
 		var action  = form.attr("action") + "?" + $(this).fieldSerialize();

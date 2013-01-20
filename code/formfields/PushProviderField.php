@@ -56,7 +56,7 @@ class PushProviderField extends FormField {
 		return $data->renderWith('PushProviderField_ProviderFields');
 	}
 
-	public function validate(Validator $validator) {
+	public function validate($validator) {
 		if($this->provider) {
 			$result = $this->provider->validateSettings();
 
@@ -96,14 +96,13 @@ class PushProviderField extends FormField {
 		}
 	}
 
-	public function saveInto(DataObject $record) {
+	public function saveInto(DataObjectInterface $record) {
 		$record->{$this->name} = $this->provider;
 	}
 
-	public function FieldHolder() {
+	public function FieldHolder($properties = array()) {
 		Requirements::javascript(THIRDPARTY_DIR . '/jquery/jquery.js');
 		Requirements::javascript('push/javascript/PushProviderField.js');
-		Requirements::css('push/css/PushProviderField.css');
 
 		return $this->renderWith('PushProviderField');
 	}
@@ -122,7 +121,6 @@ class PushProviderField extends FormField {
 			$this->provider ? get_class($this->provider) : null,
 			null,
 			true);
-
 		if($this->isReadonly()) {
 			return $field->performReadonlyTransformation();
 		} else {
