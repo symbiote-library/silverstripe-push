@@ -3,6 +3,8 @@
  * @package silverstripe-push
  */
 
+require_once '../vendor/autoload.php';
+
 PushProvidersRegistry::inst()->add('EmailPushProvider');
 PushProvidersRegistry::inst()->add('UrbanAirshipBroadcastPushProvider');
 
