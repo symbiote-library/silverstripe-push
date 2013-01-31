@@ -1,4 +1,9 @@
 <?php
+
+use Guzzle\Http\Client;
+use Guzzle\Http\Exception\RequestException;
+use Guzzle\Http\Message\RequestInterface;
+
 /**
  * An Urban Airship broadcast api push notification provider.
  *
@@ -6,8 +11,15 @@
  */
 class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 
-	const BROADCAST_URL = 'https://go.urbanairship.com/api/push/broadcast/';
-	
+	const ANDROID    = 'android';
+	const BLACKBERRY = 'blackberry';
+	const IOS        = 'ios';
+	const MPNS       = 'mpns';
+	const WNS        = 'wns';
+
+	const V1_API_URL = 'https://go.urbanairship.com/api/push';
+	const V2_API_URL = 'https://device-api.urbanairship.com/2/push';
+
 	public static $applications = array();
 
 	public static function add_application($title, $key, $secret) {
@@ -16,89 +28,108 @@ class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 			'secret' => $secret,
 		);
 	}
-	
+
 	public function getTitle() {
 		return _t('Push.URBANAIRSHIPBROADCAST', 'Urban Airship Broadcast');
 	}
-	
+
 	public function sendPushNotification(PushNotification $notification) {
-		$title = $this->getSetting('App');
-		if (!$title) {
-			throw new PushException("No application selected. Please add configuration for a new application");
+		$app     = $this->getSetting('App');
+		$devices = array_filter(explode(',', $this->getSetting('Devices')), 'strlen');
+
+		if(!$app) {
+			throw new PushException('No application was selected.');
 		}
 
-		$settings = isset(self::$applications[$title]) ? self::$applications[$title] : null;
+		if(!isset(self::$applications[$app])) {
+			throw new PushException(sprintf('No settings were provided for application "%s"', $app));
+		}
+
+		if(!$devices) {
+			throw new PushException('At least one device type must be selected to send to.');
+		}
 		
-		if (!$settings) {
-			throw new PushException("No settings provided for application " . Convert::raw2xml($title));
+		$user = self::$applications[$app]['key'];
+		$pass = self::$applications[$app]['secret'];
+
+		$send = function(RequestInterface $request) {
+			try {
+				$response = $request->send();
+			} catch(RequestException $e) {
+				throw new PushException($e->getMessage(), 0, $e);
+			}
+
+			if($response->isError()) {
+				throw new PushException($response->getBody());
+			}
+		};
+
+		// Use the V1 API for sending to Android, Blackberry and iOS.
+		if(array_intersect($devices, array(self::ANDROID, self::BLACKBERRY, self::IOS))) {
+			$client = new Client(self::V1_API_URL);
+			$body = array();
+
+			if(in_array(self::ANDROID, $devices)) {
+				$body['android'] = array('alert' => $notification->Content);
+			}
+
+			if(in_array(self::BLACKBERRY, $devices)) {
+				$body['blackberry'] = array(
+					'content-type' => 'text/plain',
+					'body'         => $notification->Content
+				);
+			}
+
+			if(in_array(self::IOS, $devices)) {
+				$body['aps'] = array(
+					'badge' => $this->getSetting('Badge') == 'inc' ? '+1' : $this->getSetting('Badge'),
+					'alert' => $notification->Content,
+					'sound' => $this->getSetting('Sound'),
+				);
+			}
+
+			$request = $client->post('broadcast');
+			$request->setAuth($user, $pass);
+			$request->setBody(json_encode($body), 'application/json');
+
+			$send($request);
 		}
 
-		$client = $this->getClient(self::BROADCAST_URL, $settings['key'], $settings['secret']);
+		// Use the V2 API for sending to Windows.
+		if(array_intersect($devices, array(self::MPNS, self::WNS))) {
+			$client = new Client(self::V1_API_URL);
+			$types  = array();
 
-		$client->setMethod('POST');
-		$client->setHeaders('Content-Type: application/json');
+			if(in_array(self::MPNS, $devices)) $types[] = 'mpns';
+			if(in_array(self::WNS, $devices))  $types[] = 'wns';
 
-		$data = array(
-			'aps'	=> array(
-				'badge'		=> $this->getSetting('Badge') == 'inc' ? '+1' : $this->getSetting('Badge'), 
-				'alert'		=> $notification->Content,
-				'sound'		=> $this->getSetting('Sound'), 
-			),
-
-// TODO: When android is needed...
-//			'android'	=> array(
-//				'alert'		=> $message
-//			)
-		);
-
-		$raw = Convert::raw2json($data);
-		$client->setRawData($raw);
-		
-		$response = $client->request();
-		if ($response->isError()) {
-			throw new PushException($response->getBody(), $response->getStatus());
-		}
-		return true;
-	}
-	
-	
-	protected $httpClient;
-	
-	/**
-	 * @return type Zend_Http_Client
-	 */
-	protected function getClient($uri, $user=null, $pass=null) {
-		if (!$this->httpClient) {
-			
-			set_include_path(get_include_path() . PATH_SEPARATOR . Director::baseFolder() . '/push/thirdparty');
-			include_once Director::baseFolder().'/push/thirdparty/Zend/Http/Client.php';
-
-			$this->httpClient = new Zend_Http_Client(
-				$uri, 
-				array(
-					'maxredirects' => 0,
-					'timeout' => 10
-				)
+			$body = array(
+				'notification' => array('alert' => $notification->Content),
+				'device_types' => $types
 			);
-		} else {
-			$this->httpClient->setUri($uri);
+
+			$request = $client->post('broadcast');
+			$request->setAuth($user, $pass);
+			$request->setBody(json_encode($body), 'application/json');
+
+			$send($request);
 		}
-
-		$this->httpClient->resetParameters();
-
-		if ($user) {
-			$this->httpClient->setAuth($user, $pass);
-		}
-
-		return $this->httpClient;
 	}
-	
+
 	public function setSettings(array $data) {
 		parent::setSettings($data);
 
+		if(isset($data['Devices'])) {
+			if(is_array($data['Devices'])) {
+				$this->setSetting('Devices', implode(',', $data['Devices']));
+			} else {
+				$this->setSetting('Devices', $data['Devices']);
+			}
+		}
+
+		$this->setSetting('App', isset($data['App']) ? (string) $data['App'] : null);
 		$this->setSetting('Sound', isset($data['Sound']) ? (string) $data['Sound'] : null);
 		$this->setSetting('Badge', isset($data['Badge']) ? (string) $data['Badge'] : null);
-		$this->setSetting('App', isset($data['App']) ? (string) $data['App'] : null);
 	}
 
 	public function getSettingsFields() {
@@ -114,13 +145,31 @@ class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 			$applications = ArrayLib::valuekey($applications);
 		}
 
-		return new FieldList(
-			new DropdownField(
+		$fields = new FieldList(
+			$app = new DropdownField(
 				$this->getSettingFieldName('App'),
 				_t('Push.UA_APP', 'Urban Airship Application'),
 				$applications,
 				$this->getSetting('App')
 			),
+			new CheckboxSetField(
+				$this->getSettingFieldName('Devices'),
+				_t('Push.DEVICES', 'Devices'),
+				array(
+					self::ANDROID    => 'Android',
+					self::BLACKBERRY => 'Blackberry',
+					self::IOS        => 'iOS',
+					self::MPNS       => 'Windows Phone',
+					self::WNS        => 'Windows 8'
+				),
+				$this->getSetting('Devices')
+			),
+			new LiteralField('', sprintf('<p>%s</p>', _t(
+				'Push.UARECIPIENTSUPPORT', 'The Urban Airship provider does ' .
+				'not support selecting recipients - the push notification ' .
+				'will be sent to all devices using the broadcast API.'
+			))),
+			new HeaderField('IosOptionsHeader', _t('Push.IOSOPTIONS', 'iOS Options')),
 			new DropdownField(
 				$this->getSettingFieldName('Sound'),
 				_t('Push.UA_SOUND', 'Trigger sound when alert is received?'),
@@ -129,15 +178,14 @@ class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 			),
 			new DropdownField(
 				$this->getSettingFieldName('Badge'),
-				_t('Push.UA_BADGE', 'Badge value'),
+				_t('Push.UA_BADGE', 'Badge'),
 				$badges,
 				$this->getSetting('Badge')
-			),
-			new LiteralField('', sprintf('<p>%s</p>', _t(
-				'Push.UARECIPIENTSUPPORT', 'The Urban Airship provider does ' .
-				'not support selecting recipients - the push notification ' .
-				'will be sent to all devices using the broadcast API.'
-			)))
+			)
 		);
+
+		$app->setHasEmptyDefault(true);
+
+		return $fields;
 	}
 }

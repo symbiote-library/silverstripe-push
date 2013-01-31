@@ -13,7 +13,8 @@ abstract class PushNotificationProvider {
 	abstract public function getTitle();
 
 	/**
-	 * @param PushNotification $notification
+	 * @param PushNotification $notification the notification to send
+	 * @throws PushException if sending the notification fails
 	 */
 	abstract public function sendPushNotification(PushNotification $notification);
 
@@ -50,7 +51,7 @@ abstract class PushNotificationProvider {
 	/**
 	 * Returns a list of form fields used for populating the custom settings.
 	 *
-	 * @param  PushProvidersField $field
+	 * @param  PushProviderField $field
 	 * @return FieldList
 	 */
 	public function getSettingsFields() {
@@ -73,7 +74,7 @@ abstract class PushNotificationProvider {
 		return $this->field;
 	}
 
-	public function setFormField(PushProvidersField $field) {
+	public function setFormField(PushProviderField $field) {
 		$this->field = $field;
 	}
 

@@ -9,7 +9,7 @@ class PushNotificationsAdminItemRequest extends GridFieldDetailForm_ItemRequest 
 			 $this->record->doSend();
 		} catch(PushException $ex) {
 			return new SS_HTTPResponse(
-				$this->EditForm()->forAjaxTemplate(), 400, $ex->getMessage()
+				$this->ItemEditForm()->forAjaxTemplate(), 400, $ex->getMessage()
 			);
 		}
 
