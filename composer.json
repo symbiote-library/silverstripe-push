@@ -11,8 +11,7 @@
         }
     ],
     "require": {
-        "silverstripe/framework": "3.*",
-        "guzzle/guzzle": "v3.1.2"
+        "silverstripe/framework": "3.*"
     },
     "extra": {
         "installer-name": "push"
