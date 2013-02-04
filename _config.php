@@ -3,6 +3,10 @@
  * @package silverstripe-push
  */
 
+set_include_path(
+	__DIR__ . '/thirdparty' . PATH_SEPARATOR . get_include_path()
+);
+
 PushProvidersRegistry::inst()->add('EmailPushProvider');
 PushProvidersRegistry::inst()->add('UrbanAirshipBroadcastPushProvider');
 

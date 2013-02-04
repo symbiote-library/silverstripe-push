@@ -34,6 +34,8 @@ class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 	}
 
 	public function sendPushNotification(PushNotification $notification) {
+		require_once 'Zend/Http/Client.php';
+
 		$app     = $this->getSetting('App');
 		$devices = array_filter(explode(',', $this->getSetting('Devices')), 'strlen');
 
@@ -48,17 +50,30 @@ class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 		if(!$devices) {
 			throw new PushException('At least one device type must be selected to send to.');
 		}
-		
+
 		$user = self::$applications[$app]['key'];
 		$pass = self::$applications[$app]['secret'];
-		
+
+		$request = function($url, $payload) use ($user, $pass) {
+			$client = new Zend_Http_Client($url);
+
+			$client->setAuth($user, $pass);
+			$client->setHeaders('Content-Type: application/json');
+			$client->setRawData(json_encode($payload), 'application/json');
+
+			try {
+				$response = $client->request('POST');
+			} catch(Zend_Http_Client_Exception $e) {
+				throw new PushException($e->getMessage(), $e->getCode(), $e);
+			}
+
+			if($response->isError()) {
+				throw new PushException($response->getBody(), $response->getStatus());
+			}
+		};
+
 		// Use the V1 API for sending to Android, Blackberry and iOS.
 		if(array_intersect($devices, array(self::ANDROID, self::BLACKBERRY, self::IOS))) {
-			$client = $this->getClient(self::V1_API_URL, $user, $pass);
-
-			$client->setMethod('POST');
-			$client->setHeaders('Content-Type: application/json');
-
 			$body = array();
 
 			if(in_array(self::ANDROID, $devices)) {
@@ -80,66 +95,21 @@ class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 				);
 			}
 
-			$raw = Convert::raw2json($body);
-			$client->setRawData($raw);
-
-			$response = $client->request();
-			if ($response->isError()) {
-				throw new PushException($response->getBody(), $response->getStatus());
-			}
+			$request(self::V1_API_URL . '/broadcast/', $body);
 		}
 
 		// Use the V2 API for sending to Windows.
 		if(array_intersect($devices, array(self::MPNS, self::WNS))) {
-			$client = $this->getClient(self::V2_API_URL, $user, $pass);
-
-			$client->setMethod('POST');
-			$client->setHeaders('Content-Type: application/json');
-			
 			$types  = array();
 
 			if(in_array(self::MPNS, $devices)) $types[] = 'mpns';
 			if(in_array(self::WNS, $devices))  $types[] = 'wns';
 
-			$body = array(
+			$request(self::V2_API_URL . '/broadcast/', array(
 				'notification' => array('alert' => $notification->Content),
 				'device_types' => $types
-			);
-
-			$raw = Convert::raw2json($body);
-			$client->setRawData($raw);
-
-			$response = $client->request();
-			if ($response->isError()) {
-				throw new PushException($response->getBody(), $response->getStatus());
-			}
+			));
 		}
-	}
-	
-	protected function getClient($uri, $user=null, $pass=null) {
-		if (!$this->httpClient) {
-			
-			set_include_path(get_include_path() . PATH_SEPARATOR . Director::baseFolder() . '/push/thirdparty');
-			include_once Director::baseFolder().'/push/thirdparty/Zend/Http/Client.php';
-
-			$this->httpClient = new Zend_Http_Client(
-				$uri, 
-				array(
-					'maxredirects' => 0,
-					'timeout' => 10
-				)
-			);
-		} else {
-			$this->httpClient->setUri($uri);
-		}
-
-		$this->httpClient->resetParameters();
-
-		if ($user) {
-			$this->httpClient->setAuth($user, $pass);
-		}
-
-		return $this->httpClient;
 	}
 
 	public function setSettings(array $data) {
