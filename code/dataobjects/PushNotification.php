@@ -66,15 +66,20 @@ class PushNotification extends DataObject {
 			'Push.USEDMAINBODY', '(Used as the main body of the notification)'
 		));
 
+		if ($this->ID) {
+			$fields->addFieldsToTab('Root.Main', array(
+				new CheckboxSetField(
+					'RecipientMembers',
+					_t('Push.RECIPIENTMEMBERS', 'Recipient Members'),
+					Member::get()->map()),
+				new TreeMultiselectField(
+					'RecipientGroups',
+					_t('Push.RECIPIENTGROUPS', 'Recipient Groups'),
+					'Group')
+			));
+		}
+		
 		$fields->addFieldsToTab('Root.Main', array(
-			new CheckboxSetField(
-				'RecipientMembers',
-				_t('Push.RECIPIENTMEMBERS', 'Recipient Members'),
-				Member::get()->map()),
-			new TreeMultiselectField(
-				'RecipientGroups',
-				_t('Push.RECIPIENTGROUPS', 'Recipient Groups'),
-				'Group'),
 			new PushProviderField(
 				'Provider',
 				_t('Push.PROVIDER', 'Provider'),
