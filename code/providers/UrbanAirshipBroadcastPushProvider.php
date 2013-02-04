@@ -52,11 +52,9 @@ class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 		$user = self::$applications[$app]['key'];
 		$pass = self::$applications[$app]['secret'];
 		
-		
-
 		// Use the V1 API for sending to Android, Blackberry and iOS.
 		if(array_intersect($devices, array(self::ANDROID, self::BLACKBERRY, self::IOS))) {
-			$client = $this->getClient(self::V1_API_URL, $settings['key'], $settings['secret']);
+			$client = $this->getClient(self::V1_API_URL, $user, $pass);
 
 			$client->setMethod('POST');
 			$client->setHeaders('Content-Type: application/json');
@@ -93,7 +91,7 @@ class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 
 		// Use the V2 API for sending to Windows.
 		if(array_intersect($devices, array(self::MPNS, self::WNS))) {
-			$client = $this->getClient(self::V2_API_URL, $settings['key'], $settings['secret']);
+			$client = $this->getClient(self::V2_API_URL, $user, $pass);
 
 			$client->setMethod('POST');
 			$client->setHeaders('Content-Type: application/json');
