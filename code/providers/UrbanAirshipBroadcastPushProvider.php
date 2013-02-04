@@ -51,22 +51,16 @@ class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 		
 		$user = self::$applications[$app]['key'];
 		$pass = self::$applications[$app]['secret'];
-
-		$send = function(RequestInterface $request) {
-			try {
-				$response = $request->send();
-			} catch(RequestException $e) {
-				throw new PushException($e->getMessage(), 0, $e);
-			}
-
-			if($response->isError()) {
-				throw new PushException($response->getBody());
-			}
-		};
+		
+		
 
 		// Use the V1 API for sending to Android, Blackberry and iOS.
 		if(array_intersect($devices, array(self::ANDROID, self::BLACKBERRY, self::IOS))) {
-			$client = new Client(self::V1_API_URL);
+			$client = $this->getClient(self::V1_API_URL, $settings['key'], $settings['secret']);
+
+			$client->setMethod('POST');
+			$client->setHeaders('Content-Type: application/json');
+
 			$body = array();
 
 			if(in_array(self::ANDROID, $devices)) {
@@ -88,16 +82,22 @@ class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 				);
 			}
 
-			$request = $client->post('broadcast');
-			$request->setAuth($user, $pass);
-			$request->setBody(json_encode($body), 'application/json');
+			$raw = Convert::raw2json($body);
+			$client->setRawData($raw);
 
-			$send($request);
+			$response = $client->request();
+			if ($response->isError()) {
+				throw new PushException($response->getBody(), $response->getStatus());
+			}
 		}
 
 		// Use the V2 API for sending to Windows.
 		if(array_intersect($devices, array(self::MPNS, self::WNS))) {
-			$client = new Client(self::V1_API_URL);
+			$client = $this->getClient(self::V2_API_URL, $settings['key'], $settings['secret']);
+
+			$client->setMethod('POST');
+			$client->setHeaders('Content-Type: application/json');
+			
 			$types  = array();
 
 			if(in_array(self::MPNS, $devices)) $types[] = 'mpns';
@@ -108,12 +108,40 @@ class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 				'device_types' => $types
 			);
 
-			$request = $client->post('broadcast');
-			$request->setAuth($user, $pass);
-			$request->setBody(json_encode($body), 'application/json');
+			$raw = Convert::raw2json($body);
+			$client->setRawData($raw);
 
-			$send($request);
+			$response = $client->request();
+			if ($response->isError()) {
+				throw new PushException($response->getBody(), $response->getStatus());
+			}
 		}
+	}
+	
+	protected function getClient($uri, $user=null, $pass=null) {
+		if (!$this->httpClient) {
+			
+			set_include_path(get_include_path() . PATH_SEPARATOR . Director::baseFolder() . '/push/thirdparty');
+			include_once Director::baseFolder().'/push/thirdparty/Zend/Http/Client.php';
+
+			$this->httpClient = new Zend_Http_Client(
+				$uri, 
+				array(
+					'maxredirects' => 0,
+					'timeout' => 10
+				)
+			);
+		} else {
+			$this->httpClient->setUri($uri);
+		}
+
+		$this->httpClient->resetParameters();
+
+		if ($user) {
+			$this->httpClient->setAuth($user, $pass);
+		}
+
+		return $this->httpClient;
 	}
 
 	public function setSettings(array $data) {
