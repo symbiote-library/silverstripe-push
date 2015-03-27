@@ -36,7 +36,7 @@ class PushNotification extends DataObject {
 
 	public function getCMSFields() {
 		$fields = parent::getCMSFields();
-
+		
 		$fields->removeByName('ProviderClass');
 		$fields->removeByName('ProviderSettings');
 		$fields->removeByName('Sent');

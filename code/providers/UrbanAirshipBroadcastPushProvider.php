@@ -34,7 +34,6 @@ class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 	}
 
 	public function sendPushNotification(PushNotification $notification) {
-		require_once 'Zend/Http/Client.php';
 
 		$app     = $this->getSetting('App');
 		$devices = array_filter(explode(',', $this->getSetting('Devices')), 'strlen');
@@ -55,7 +54,7 @@ class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 		$pass = self::$applications[$app]['secret'];
 
 		$request = function($url, $payload) use ($user, $pass) {
-			$client = new Zend_Http_Client($url);
+			$client = new Zend\Http\Client($url);
 
 			$client->setAuth($user, $pass);
 			$client->setHeaders('Content-Type: application/json');
@@ -63,7 +62,7 @@ class UrbanAirshipBroadcastPushProvider extends PushNotificationProvider {
 
 			try {
 				$response = $client->request('POST');
-			} catch(Zend_Http_Client_Exception $e) {
+			} catch(Zend\Http\Client_Exception $e) {
 				throw new PushException($e->getMessage(), $e->getCode(), $e);
 			}
 
