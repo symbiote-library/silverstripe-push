@@ -1,0 +1,28 @@
+---
+Name: push_config
+---
+Injector:
+  PushProvidersRegistry:
+    properties:
+      providers:
+        - EmailPushProvider
+  PushProviderField:
+    properties: 
+      registry: %$PushProvidersRegistry
+
+LeftAndMain:
+  extra_requirements_css: 
+    - push/css/push.css
+    
+BetterButtonsActions:
+  edit:
+    BetterButton_Send: true
+    
+---
+Name: push_config_queued
+Only:
+  moduleexists: queuedjobs
+---
+PushNotification:
+  has_one:
+    SendJob: QueuedJobDescriptor

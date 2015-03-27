@@ -4,7 +4,7 @@
  */
 class PushNotification extends DataObject {
 
-	public static $db = array(
+	private static $db = array(
 		'Title'            => 'Varchar(100)',
 		'Content'          => 'Text',
 		'ProviderClass'    => 'Varchar(50)',
@@ -14,23 +14,23 @@ class PushNotification extends DataObject {
 		'SentAt'           => 'SS_Datetime'
 	);
 
-	public static $many_many = array(
+	private static $many_many = array(
 		'RecipientMembers' => 'Member',
 		'RecipientGroups'  => 'Group'
 	);
 
-	public static $summary_fields = array(
+	private static $summary_fields = array(
 		'Title',
 		'SentAt'
 	);
 
-	public static $searchable_fields = array(
+	private static $searchable_fields = array(
 		'Title',
 		'Content',
 		'Sent'
 	);
 	
-	public static $default_sort = 'Created DESC';
+	private static $default_sort = 'Created DESC';
 
 	protected $providerInst;
 
@@ -80,10 +80,9 @@ class PushNotification extends DataObject {
 		}
 		
 		$fields->addFieldsToTab('Root.Main', array(
-			new PushProviderField(
+			PushProviderField::create(
 				'Provider',
-				_t('Push.PROVIDER', 'Provider'),
-				PushProvidersRegistry::inst())
+				_t('Push.PROVIDER', 'Provider'))
 		));
 
 		return $fields;
@@ -114,6 +113,8 @@ class PushNotification extends DataObject {
 
 		return $result;
 	}
+	
+	private $resave = false;
 
 	protected function onBeforeWrite() {
 		parent::onBeforeWrite();
@@ -123,17 +124,29 @@ class PushNotification extends DataObject {
 		}
 
 		if($this->ScheduledAt) {
-			if($this->SendJobID) {
-				$job = $this->SendJob();
-				$job->StartAfter = $this->ScheduledAt;
-				$job->write();
+			if (!$this->ID) {
+				$this->resave = true;
 			} else {
-				$this->SendJobID = singleton('QueuedJobService')->queueJob(
-					new SendPushNotificationsJob($this), $this->ScheduledAt
-				);
+				if($this->SendJobID) {
+					$job = $this->SendJob();
+					$job->StartAfter = $this->ScheduledAt;
+					$job->write();
+				} else {
+					$this->SendJobID = singleton('QueuedJobService')->queueJob(
+						new SendPushNotificationsJob($this), $this->ScheduledAt
+					);
+				}
 			}
+			
 		} else {
 			if($this->SendJobID) $this->SendJob()->delete();
+		}
+	}
+	
+	public function onAfterWrite() {
+		if ($this->resave) {
+			$this->resave = false;
+			$this->write();
 		}
 	}
 
@@ -216,5 +229,5 @@ class PushNotification extends DataObject {
 		$this->SentAt = date('Y-m-d H:i:s');
 		$this->write();
 	}
-
+	
 }

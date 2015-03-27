@@ -4,17 +4,16 @@
  */
 class PushNotificationsAdmin extends ModelAdmin {
 
-	public static $menu_title  = 'Push';
-	public static $url_segment = 'push';
+	private static $menu_title  = 'Push';
+	private static $url_segment = 'push';
 
-	public static $managed_models = array(
+	private static $managed_models = array(
 		'PushNotification' => array(
 			'title'             => 'Push Notifications',
-			'record_controller' => 'PushNotificationsAdminRecordController'
 		)
 	);
 
-	public static $model_importers = array();
+	private static $model_importers = array();
 
 	public function init() {
 		parent::init();

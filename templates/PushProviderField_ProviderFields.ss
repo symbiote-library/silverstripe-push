@@ -1,3 +1,3 @@
 <% if SettingsFields %>
-	<% control SettingsFields %>$FieldHolder<% end_control %>
+	<% loop SettingsFields %>$FieldHolder<% end_loop %>
 <% end_if %>

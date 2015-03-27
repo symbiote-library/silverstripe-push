@@ -5,7 +5,9 @@
 class SendPushNotificationsJob extends AbstractQueuedJob {
 
 	public function __construct($notification) {
-		if($notification) $this->setObject($notification);
+		if($notification) {
+			$this->setObject($notification);
+		}
 	}
 
 	public function getTitle() {

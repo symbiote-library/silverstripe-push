@@ -6,31 +6,7 @@
  */
 class PushProvidersRegistry {
 
-	private static $inst;
-
-	protected $providers = array();
-
-	/**
-	 * @return PushProvidersRegistry
-	 */
-	public static function inst() {
-		return self::$inst ? self::$inst : self::$inst = new self();
-	}
-
-	/**
-	 * @param string $class
-	 */
-	public function add($class) {
-		if(!is_subclass_of($class, 'PushNotificationProvider')) {
-			throw new Exception('Provider classes must be subclasses of PushNotificationProvider.');
-		}
-
-		if($this->has($class)) {
-			throw new Exception("The provider '$class' already exists.");
-		}
-
-		$this->providers[] = $class;
-	}
+	public $providers = array();
 
 	/**
 	 * @param  string $class

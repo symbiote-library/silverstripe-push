@@ -11,7 +11,9 @@
         }
     ],
     "require": {
-        "silverstripe/framework": "3.*"
+        "silverstripe/framework": "3.*",
+		"zendframework/zend-http": "~2.3.0",
+		"zendframework/zend-feed": "~2.3.0"
     },
     "extra": {
         "installer-name": "push"

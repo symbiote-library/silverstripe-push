@@ -6,11 +6,11 @@
  */
 class PushProviderField extends FormField {
 
-	public static $url_handlers = array(
+	private static $url_handlers = array(
 		'fields/$Class!' => 'fields'
 	);
 
-	public static $allowed_actions = array(
+	private static $allowed_actions = array(
 		'fields'
 	);
 
@@ -18,16 +18,14 @@ class PushProviderField extends FormField {
 	protected $provider;
 	protected $providers = array();
 
-	public function __construct($name, $title, PushProvidersRegistry $registry) {
+	public function setRegistry($registry) {
 		$this->registry = $registry;
 
 		foreach($this->registry->getProviders() as $class) {
-			$inst = new $class;
+			$inst = Injector::inst()->get($class);
 			$inst->setFormField($this);
 			$this->providers[$class] = $inst;
 		}
-
-		parent::__construct($name, $title);
 	}
 
 	public function fields($request) {
@@ -114,13 +112,11 @@ class PushProviderField extends FormField {
 			$values[$class] = $inst->getTitle();
 		}
 
-		$field = new DropdownField(
+		$field = DropdownField::create(
 			"$this->name[Provider]",
 			_t('Push.DELIVERYCHANNEL', 'Delivery Channel'),
 			$values,
-			$this->provider ? get_class($this->provider) : null,
-			null,
-			true);
+			$this->provider ? get_class($this->provider) : null)->setHasEmptyDefault(true);
 		if($this->isReadonly()) {
 			return $field->performReadonlyTransformation();
 		} else {
