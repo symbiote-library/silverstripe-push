@@ -22,7 +22,7 @@ class BetterButton_Send extends BetterButton {
      */
     public function shouldDisplay() {
         $record = $this->gridFieldRequest->record;
-        return $record->canEdit();
+        return $record->canEdit() && $record instanceof PushNotification;
     }
 }
 	
