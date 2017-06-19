@@ -1,5 +1,5 @@
 {
-    "name": "silverstripe-australia/silverstripe-push",
+    "name": "symbiote-library/silverstripe-push",
     "description": "SilverStripe push notifications module",
     "type": "silverstripe-module",
     "keywords": ["silverstripe", "push", "notification"],
@@ -16,6 +16,9 @@
 		"zendframework/zend-feed": "~2.2.0"
     },
     "extra": {
-        "installer-name": "push"
+        "installer-name": "push",
+        "branch-alias": {
+            "dev-master": "2.0.x-dev"
+        }
     }
 }
