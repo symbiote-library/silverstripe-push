@@ -7,8 +7,8 @@
 
 ## Maintainer Contacts
 
-* Andrew Short (<andrew@silverstripe.com.au>)
-* Marcus Nyeholt (<marcus@silverstripe.com.au>)
+* Andrew Short (<andrew@symbiote.com.au>)
+* Marcus Nyeholt (<marcus@symbiote.com.au>)
 
 This module developed with the support of [BERZERK\* interactive](http://www.berzerk.co.nz/)
 
@@ -40,5 +40,5 @@ UrbanAirshipBroadcastPushProvider::add_application('your_app_name', 'key', 'secr
 
 ## Project Links
 
-* [GitHub Project Page](https://github.com/silverstripe-australia/silverstripe-push)
+* [GitHub Project Page](https://github.com/symbiote-library/silverstripe-push)
 
